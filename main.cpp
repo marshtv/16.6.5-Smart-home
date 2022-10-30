@@ -6,9 +6,7 @@ int main() {
 	int temperature_outside;
 	int temperature_inside;
 	char moving_char;
-	bool is_moving_outside = false;
 	char lights_inside_char;
-	bool is_lights_inside = false;
 	char continue_program;
 	int light_temperature = 5000;
 
@@ -17,15 +15,11 @@ int main() {
 		LIGHTS_OUTSIDE = 2,
 		HEATERS = 4,
 		WATER_PIPE_HEATING = 8,
-		CONDITIONER = 16
+		CONDITIONER = 16,
+		MOVING_OUTSIDE = 32
 	};
-	int switches_state;
-	switches_state &= ~LIGHTS_INSIDE;
-	switches_state &= ~WATER_PIPE_HEATING;
-	switches_state &= ~LIGHTS_OUTSIDE;
-	switches_state &= ~HEATERS;
-	switches_state &= ~CONDITIONER;
-
+	int switches_state = 0;
+	
 	for (int i = 0; i < 24; i++) {
 		if (i < 10)
 			std::cout << "Time is: 0" << i << ":00" << std::endl;
@@ -43,17 +37,30 @@ int main() {
 		*/
 		std::cin >> temperature_outside >> temperature_inside >> moving_char >> lights_inside_char;
 
-		if (moving_char == 'y')
-			is_moving_outside = true;
-		else
-			is_moving_outside = false;
+		std::cout << "----------------------------" << std::endl;
 
-		if (lights_inside_char == 'y')
-			is_lights_inside = true;
-		else
-			is_lights_inside = false;
+		if (moving_char == 'y') {
+			if (!(switches_state & MOVING_OUTSIDE))
+				switches_state |= MOVING_OUTSIDE;
+		} else {
+			if (switches_state & MOVING_OUTSIDE)
+				switches_state &= ~(MOVING_OUTSIDE);
+		}
 
-		if (i <= 16)
+		if (lights_inside_char == 'y') {
+			if (!(switches_state & LIGHTS_INSIDE)) {
+				switches_state |= LIGHTS_INSIDE;
+				std::cout << "Lights inside house is ON with temperature "
+						  << light_temperature << "K." << std::endl;
+			}
+		} else {
+			if (switches_state & LIGHTS_INSIDE) {
+				switches_state &= ~(LIGHTS_INSIDE);
+				std::cout << "Lights inside house is OFF." << std::endl;
+			}
+		}
+
+		if (i >= 0 && i <= 16)
 			light_temperature = 5000;
 		else if (i == 17)
 			light_temperature = 4425;
@@ -61,69 +68,57 @@ int main() {
 			light_temperature = 3850;
 		else if (i == 19)
 			light_temperature = 3275;
-		else if (i == 20)
+		else if (i >= 20)
 			light_temperature = 2700;
 
-		std::cout << "----------------------------" << std::endl;
-
 		if (temperature_outside < 0) {
-			if (switches_state & WATER_PIPE_HEATING) {
-				std::cout << "Water pipe heating is ON." << std::endl;
+			if (!(switches_state & WATER_PIPE_HEATING)) {
 				switches_state |= WATER_PIPE_HEATING;
+				std::cout << "Water pipe heating is ON." << std::endl;
 			}
-		} else if (temperature_outside > 5) {
+		}
+		else if (temperature_outside > 5) {
 			if (switches_state & WATER_PIPE_HEATING) {
-				std::cout << "Water pipe heating is OFF." << std::endl;
 				switches_state &= ~WATER_PIPE_HEATING;
+				std::cout << "Water pipe heating is OFF." << std::endl;
 			}
 		}
 
-		if (is_moving_outside && (i < 5 || i > 16)) {
-			if (switches_state & ~LIGHTS_OUTSIDE) {
-				std::cout << "Lights in garden is ON." << std::endl;
+		if (!(switches_state & MOVING_OUTSIDE) && (i < 5 || i > 16)) {
+			if (!(switches_state & LIGHTS_OUTSIDE)) {
 				switches_state |= LIGHTS_OUTSIDE;
+				std::cout << "Lights outside is ON." << std::endl;
 			}
 		} else {
 			if (switches_state & LIGHTS_OUTSIDE) {
-				std::cout << "Lights in garden is OFF." << std::endl;
 				switches_state &= ~LIGHTS_OUTSIDE;
+				std::cout << "Lights outside is OFF." << std::endl;
 			}
 		}
 
 		if (temperature_inside < 22) {
-			if (switches_state & ~HEATERS) {
-				std::cout << "Heaters is ON." << std::endl;
+			if (!(switches_state & HEATERS)) {
 				switches_state |= HEATERS;
+				std::cout << "Heaters is ON." << std::endl;
 			}
-		} else if (temperature_inside >= 25) {
+		}
+		else if (temperature_inside >= 25) {
 			if (switches_state & HEATERS) {
-				std::cout << "Heaters is OFF." << std::endl;
 				switches_state &= ~HEATERS;
+				std::cout << "Heaters is OFF." << std::endl;
 			}
 		}
 
 		if (temperature_inside >= 30) {
-			if (switches_state & ~CONDITIONER) {
-				std::cout << "Conditioner is ON." << std::endl;
+			if (!(switches_state & CONDITIONER)) {
 				switches_state |= CONDITIONER;
-			}
-		} else if (temperature_inside <= 25) {
-			if (switches_state & CONDITIONER) {
-				std::cout << "Conditioner is OFF." << std::endl;
-				switches_state &= ~CONDITIONER;
+				std::cout << "Conditioners is ON." << std::endl;
 			}
 		}
-
-		if (is_lights_inside) {
-			if (switches_state & ~LIGHTS_INSIDE) {
-				std::cout << "Lights inside house is ON with temperature "
-						  << light_temperature << "K." << std::endl;
-				switches_state |= LIGHTS_INSIDE;
-			}
-		} else {
-			if (switches_state & LIGHTS_INSIDE) {
-				std::cout << "Lights inside house is OFF." << std::endl;
-				switches_state &= ~LIGHTS_INSIDE;
+		else if (temperature_inside <= 25) {
+			if (switches_state & CONDITIONER) {
+				switches_state &= ~CONDITIONER;
+				std::cout << "Conditioners is OFF." << std::endl;
 			}
 		}
 
@@ -136,6 +131,7 @@ int main() {
 			if (continue_program == 'y') {
 				i = 0;
 			} else {
+				std::cout << "----------------------------" << std::endl;
 				std::cout << "Exit program. Good by." << std::endl;
 				return 0;
 			}
